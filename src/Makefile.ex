@@ -15,7 +15,7 @@ LEAN_INC = path/to/lean/src
 LEAN_LIB = path/to/lean/build/release
 
 # compile classes
-TARGET = expr
+TARGET = lean
  
 $(TARGET).so: $(TARGET).o
 	g++ -shared $(TARGET).o -L$(LEAN_LIB) -lleanshared -L$(BOOST_LIB) -lboost_python -L/usr/lib/python$(PYTHON_VERSION)/config -lpython$(PYTHON_VERSION) -o $(TARGET).so -v
