@@ -1,16 +1,29 @@
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
+#include <iostream> // TODO(dhs): remove
 #include <sstream>
 
+#include "init/init.h"
 #include "util/name.h"
 #include "util/list.h"
+#include "util/optional.h"
+#include "util/path.h"
+#include "util/lean_path.h"
 #include "kernel/level.h"
 #include "kernel/expr.h"
+#include "kernel/declaration.h"
+#include "kernel/environment.h"
+#include "kernel/standard_kernel.h"
+#include "library/module.h"
+#include "library/util.h"
 
 namespace py = pybind11;
 
 PYBIND11_PLUGIN(lean) {
   py::module m("lean", "pybind11 lean plugin");
+
+  m.def("initialize", &lean::initialize);
 
   py::class_<lean::name>(m, "name")
     .def(py::init<>())
@@ -29,6 +42,16 @@ PYBIND11_PLUGIN(lean) {
     .def("__str__", [&](lean::name const & self) { return self.to_string(); })
     .def("__cmp__", [&](lean::name const & self, lean::name const & other) { return cmp(self, other); })
     .def("__hash__", &lean::name::hash)                    
+  ;
+
+  py::class_<lean::optional<lean::name> >(m, "optional_name")
+    .def(py::init<>())
+    .def(py::init<lean::name>())
+    .def("is_some", [&](lean::optional<lean::name> const & self) { return self; })
+    .def("value", [&](lean::optional<lean::name> const & self) { return self.value(); })
+
+    .def("__eq__", [&](lean::optional<lean::name> const & self, lean::optional<lean::name> const & other) { return self == other; })
+    .def("__ne__", [&](lean::optional<lean::name> const & self, lean::optional<lean::name> const & other) { return self != other; })
   ;
 
   py::class_<lean::list<lean::name> >(m, "list_name")
@@ -234,7 +257,62 @@ PYBIND11_PLUGIN(lean) {
 
   m.def("mk_Prop", &lean::mk_Prop);
   m.def("mk_Type", &lean::mk_Type);
-  m.def("mk_arrow", &lean::mk_arrow, py::arg("t"), py::arg("e"), py::arg("g") = lean::nulltag);  
-  
+  m.def("mk_arrow", &lean::mk_arrow, py::arg("t"), py::arg("e"), py::arg("g") = lean::nulltag);
+
+  py::class_<lean::declaration>(m, "declaration")
+    .def(py::init<>())
+    .def("is_definition", &lean::declaration::is_definition)
+    .def("is_axiom", &lean::declaration::is_axiom)
+    .def("is_theorem", &lean::declaration::is_theorem)
+    .def("is_constant_assumption", &lean::declaration::is_constant_assumption)
+    .def("is_trusted", &lean::declaration::is_trusted)
+
+    .def("get_name", &lean::declaration::get_name)
+    .def("get_univ_params", &lean::declaration::get_univ_params)
+    .def("get_num_univ_params", &lean::declaration::get_num_univ_params)
+    .def("get_type", &lean::declaration::get_type)
+    .def("get_value", &lean::declaration::get_value)
+    ;
+
+  m.def("mk_definition", [&](lean::environment const & env, lean::name const & n,
+			     lean::level_param_names const & params, lean::expr const & t, lean::expr const & v, bool trusted) {
+	  return lean::mk_definition(env, n, params, t, v, true, trusted); });
+
+  m.def("mk_theorem", [&](lean::name const & n, lean::level_param_names const & params, lean::expr const & t, lean::expr const & v) {
+      return lean::mk_theorem(n, params, t, v);
+    });
+
+  m.def("mk_axiom", [&](lean::name const & n, lean::level_param_names const & params, lean::expr const & t) {
+      return lean::mk_axiom(n, params, t);
+    });
+
+  m.def("mk_constant_assumption", [&](lean::name const & n, lean::level_param_names const & params, lean::expr const & t, bool trusted) {
+      return lean::mk_constant_assumption(n, params, t, trusted);
+    });
+
+  py::class_<lean::environment>(m, "environment")
+    .def(py::init<>())
+    .def("is_recursor", &lean::environment::is_recursor)
+    .def("is_builtin", &lean::environment::is_builtin)   
+
+    .def("find", &lean::environment::find)
+    .def("get", &lean::environment::get)    
+  ;
+
+  m.def("mk_environment", &lean::mk_environment, py::arg("trust_lvl") = 0);
+
+  m.def("import_modules", [&](std::vector<std::string> const & search_path, std::vector<lean::name> const & module_names) {
+      lean::environment env = lean::mk_environment();
+      std::vector<lean::module_name> imports;
+      for (lean::name const & n : module_names) {
+	imports.emplace_back(n);
+      }
+      return lean::import_modules(env, "", imports, lean::mk_olean_loader(search_path));
+    });
+
+// TODO(dhs): current spot
+// need tactic_state and its dependencies
+//  m.def("eval", [&](lean::expr const & tactic,         eval_helper fn(new_env, p.get_options(), fn_name);
+
   return m.ptr();
 }
