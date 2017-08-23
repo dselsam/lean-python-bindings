@@ -1,20 +1,20 @@
-#include <boost/python.hpp>
-
+#include <pybind11/pybind11.h>
 #include "util/name.h"
 
-using namespace boost::python;
+namespace py = pybind11;
 
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(lean_name_to_string_overloads, lean::name::to_string, 0, 1)
 
-BOOST_PYTHON_MODULE(lean) {
-  class_<lean::name>("name", init<>())
-    .def(init<std::string>())
-    .def(init<lean::name const &, char const *>())
-    .def(init<lean::name const &, unsigned>())
+PYBIND11_PLUGIN(lean) {
+  py::module m("lean", "pybind11 lean plugin");
 
-    .def("to_string", &lean::name::to_string, lean_name_to_string_overloads())
-    ;
+  py::class_<lean::name>(m, "name")
+    .def(py::init<>())
+    .def(py::init<std::string>())
+    .def(py::init<lean::name const &, char const *>())
+    .def(py::init<lean::name const &, unsigned>())
+    //    .def("to_string", (std::string (lean::name::*)(char const *)) &lean::name::to_string, "to_string", py::arg("sep") = lean::lean_name_separator)
+    .def("to_string", &lean::name::to_string, py::arg("sep") = lean::lean_name_separator)
+  ;
+  
+  return m.ptr();
 }
-
-
-
