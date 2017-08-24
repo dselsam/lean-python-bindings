@@ -250,6 +250,8 @@ PYBIND11_PLUGIN(lean) {
     .def("let_value", [&](lean::expr const & self) { return lean::let_value(self); })
     .def("let_body", [&](lean::expr const & self) { return lean::let_body(self); })                            
 
+    .def("get_tag", &lean::expr::get_tag)
+
     .def("__hash__", &lean::expr::hash)    
     .def("__str__", [&](lean::expr const & self) {
 	std::ostringstream os;
