@@ -1,7 +1,8 @@
 #include <pybind11/pybind11.h>
+#include <pybind11/pytypes.h>
 #include <pybind11/stl.h>
+#include <pybind11/functional.h>
 
-#include <iostream> // TODO(dhs): remove
 #include <sstream>
 
 #include "init/init.h"
@@ -15,8 +16,16 @@
 #include "kernel/declaration.h"
 #include "kernel/environment.h"
 #include "kernel/standard_kernel.h"
+#include "kernel/type_checker.h"
 #include "library/module.h"
 #include "library/util.h"
+#include "library/eval_helper.h"
+#include "library/metavar_context.h"
+#include "library/defeq_canonizer.h"
+#include "library/tactic/tactic_state.h"
+#include "library/compiler/vm_compiler.h"
+#include "library/vm/vm.h"
+#include "library/vm/vm_expr.h"
 
 namespace py = pybind11;
 
@@ -24,6 +33,40 @@ PYBIND11_PLUGIN(lean) {
   py::module m("lean", "pybind11 lean plugin");
 
   m.def("initialize", &lean::initialize);
+
+  py::class_<lean::options>(m, "options")
+    .def(py::init<>())
+    .def("contains", [&](lean::options const & self, lean::name const & n) { return self.contains(n); })
+
+    .def("get_bool", [&](lean::options const & self, lean::name const & n, bool default_value) {
+	return self.get_bool(n, default_value); },
+      py::arg("n"), py::arg("default_value") = false)
+
+    .def("get_int", [&](lean::options const & self, lean::name const & n, int default_value) {
+	return self.get_int(n, default_value); },
+      py::arg("n"), py::arg("default_value") = 0)
+    
+    .def("get_unsigned", [&](lean::options const & self, lean::name const & n, unsigned default_value) {
+	return self.get_unsigned(n, default_value); },
+      py::arg("n"), py::arg("default_value") = 0)
+
+    .def("get_double", [&](lean::options const & self, lean::name const & n, double default_value) {
+	return self.get_double(n, default_value); },
+      py::arg("n"), py::arg("default_value") = 0.0)
+
+    .def("get_string", [&](lean::options const & self, lean::name const & n, std::string default_value) {
+	return std::string(self.get_string(n, default_value.c_str())); },
+      py::arg("n"), py::arg("default_value") = "")
+
+    // TODO(dhs): sexprs
+
+    .def("join", [&](lean::options const & self, lean::options const & other) {
+	return join(self, other); })
+
+    .def("__eq__", [&](lean::options const & self, lean::options const & other) { return self == other; })
+    .def("__ne__", [&](lean::options const & self, lean::options const & other) { return !(self == other); })
+    .def("__hash__", &lean::options::hash)
+    ;
 
   py::class_<lean::name>(m, "name")
     .def(py::init<>())
@@ -259,6 +302,17 @@ PYBIND11_PLUGIN(lean) {
   m.def("mk_Type", &lean::mk_Type);
   m.def("mk_arrow", &lean::mk_arrow, py::arg("t"), py::arg("e"), py::arg("g") = lean::nulltag);
 
+  py::class_<lean::list<lean::expr> >(m, "list_expr")
+    .def(py::init<>())
+    .def(py::init<lean::expr const &, lean::list<lean::expr> const &>())
+
+    .def("is_nil", [&](lean::list<lean::expr> const & self) { return is_nil(self); })
+    .def("head", [&](lean::list<lean::expr> const & self) { return head(self); })
+    .def("tail", [&](lean::list<lean::expr> const & self) { return tail(self); })
+
+    .def("__str__", [&](lean::list<lean::expr> const & self) { std::ostringstream os; os << self; return os.str(); })
+    ;
+  
   py::class_<lean::declaration>(m, "declaration")
     .def(py::init<>())
     .def("is_definition", &lean::declaration::is_definition)
@@ -301,8 +355,8 @@ PYBIND11_PLUGIN(lean) {
 
   m.def("mk_environment", &lean::mk_environment, py::arg("trust_lvl") = 0);
 
-  m.def("import_modules", [&](std::vector<std::string> const & search_path, std::vector<lean::name> const & module_names) {
-      lean::environment env = lean::mk_environment();
+  m.def("import_modules", [&](std::vector<std::string> const & search_path, std::vector<lean::name> const & module_names, unsigned trust_lvl) {
+      lean::environment env = lean::mk_environment(trust_lvl);
       std::vector<lean::module_name> imports;
       for (lean::name const & n : module_names) {
 	imports.emplace_back(n);
@@ -310,9 +364,81 @@ PYBIND11_PLUGIN(lean) {
       return lean::import_modules(env, "", imports, lean::mk_olean_loader(search_path));
     });
 
-// TODO(dhs): current spot
-// need tactic_state and its dependencies
-//  m.def("eval", [&](lean::expr const & tactic,         eval_helper fn(new_env, p.get_options(), fn_name);
+  // TODO(dhs): expose more methods
+  py::class_<lean::local_context>(m, "local_context")
+    .def(py::init<>())
+    ;
+
+  // TODO(dhs): expose more methods  
+  py::class_<lean::metavar_context>(m, "metavar_context")
+    .def(py::init<>())
+    .def("mk_metavar_decl", [&](lean::metavar_context & self, lean::local_context const & ctx, lean::expr const & type) {
+	return self.mk_metavar_decl(ctx, type); })
+    ;
+
+  py::class_<lean::defeq_can_state>(m, "defeq_can_state")
+    .def(py::init<>())
+    ;
+
+  py::class_<lean::tactic_user_state>(m, "tactic_user_state")
+    .def(py::init<>())
+    ;
+
+  // TODO(dhs): expose more methods
+  py::class_<lean::tactic_state>(m, "tactic_state")
+    .def(py::init<lean::environment const &, lean::options const &, lean::name const &,
+	 lean::metavar_context const &, lean::list<lean::expr> const &, lean::expr const &,
+	 lean::defeq_can_state const &, lean::tactic_user_state const &>())
+    .def(py::init<lean::tactic_state const &>())
+    .def("goals", &lean::tactic_state::goals, py::return_value_policy::reference_internal)
+    ;
+
+  py::class_<lean::vm_obj>(m, "vm_obj")
+    .def(py::init<>())
+    ;
+
+  py::class_<lean::optional<std::pair<lean::vm_obj, lean::tactic_state> > >(m, "optional_tactic_result")
+    .def(py::init<>())
+    .def(py::init<std::pair<lean::vm_obj const &, lean::tactic_state const &> >())
+    .def("is_some", [&](lean::optional<std::pair<lean::vm_obj, lean::tactic_state> > const & self) { return static_cast<bool>(self); })
+    .def("value", [&](lean::optional<std::pair<lean::vm_obj, lean::tactic_state> > const & self) { return self.value(); })
+  ;
+
+  m.def("mk_vm_unit", [&]() { return lean::mk_vm_unit(); });
+  m.def("to_star", [&](lean::vm_obj const & s) { return py::tuple(); });    
+  m.def("to_expr", [&](lean::vm_obj const & e) { return lean::to_expr(e); });
+  m.def("to_obj", [&](lean::expr const & e) { return lean::to_obj(e); });  
+  
+  m.def("run_tactic", [&](lean::tactic_state const & ts, lean::expr const & tactic,
+			  lean::level_param_names const & ls, std::vector<lean::vm_obj> const & _args) {
+	  lean::name fn_name("_main");
+	  lean::type_context tc(ts.env(), lean::transparency_mode::All);
+	  lean::expr type = tc.infer(tactic);
+
+	  lean::environment new_env = ts.env();
+	  bool use_conv_opt   = true;
+	  bool is_trusted     = false;
+	  lean::certified_declaration cd = lean::check(new_env, mk_definition(new_env, fn_name, ls, type, tactic, use_conv_opt, is_trusted));
+	  new_env = new_env.add(cd);
+	  new_env = lean::vm_compile(new_env, new_env.get(fn_name));
+
+	  lean::vm_state vms(new_env, ts.get_options());
+	  
+	  std::vector<lean::vm_obj> args;
+	  args.push_back(lean::to_obj(ts));
+
+	  for_each (_args.rbegin(), _args.rend(), [&](lean::vm_obj const & arg) {
+	      args.push_back(arg);
+	    });
+	  
+	  lean::vm_obj r = vms.invoke(fn_name, args.size(), args.data());
+	  if (lean::tactic::is_result_success(r)) {
+	    return lean::optional<std::pair<lean::vm_obj, lean::tactic_state> >(lean::mk_pair(lean::tactic::get_result_value(r),
+											    lean::tactic::to_state(lean::tactic::get_result_state(r))));
+	  } else {
+	    return lean::optional<std::pair<lean::vm_obj, lean::tactic_state> >();
+	  }
+	});
 
   return m.ptr();
 }
