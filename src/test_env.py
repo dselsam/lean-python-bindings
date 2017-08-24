@@ -1,8 +1,11 @@
 import lean
+import os
+
+MY_PATH_TO_LEAN_STDLIB = os.environ['MY_PATH_TO_LEAN_STDLIB']
 
 lean.initialize()
 
-env = lean.import_modules(["/usr/local/lib/lean/library"], [lean.name("init")], 100000)
+env = lean.import_modules([MY_PATH_TO_LEAN_STDLIB], [lean.name("init")], 100000)
 
 print "should be 'Type':"
 print env.get(lean.name("nat")).get_type()
