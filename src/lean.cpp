@@ -350,7 +350,10 @@ PYBIND11_PLUGIN(lean) {
     .def("is_builtin", &lean::environment::is_builtin)   
 
     .def("find", &lean::environment::find)
-    .def("get", &lean::environment::get)    
+    .def("get", &lean::environment::get)
+
+    .def("for_each_declaration", [&](lean::environment const & self, py::function fn) {
+	self.for_each_declaration([&](lean::declaration const & d) { fn(d); }); })
   ;
 
   m.def("mk_environment", &lean::mk_environment, py::arg("trust_lvl") = 0);
