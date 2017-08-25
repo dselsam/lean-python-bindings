@@ -22,6 +22,7 @@ add_to_list = lambda d: decls.append(d)
 env.for_each_declaration(add_to_list)
 
 print len(decls)
+
 for decl in decls:
 	print unicode(decl.get_name())
 	#print isinstance(unicode(decl.get_name()), unicode)
@@ -30,12 +31,3 @@ for decl in decls:
 	n, up, nup, t, v = DeclView(decl).destruct()
 	#print(unicode(n) + ", " + unicode(up) + ", " + unicode(nup) + ", " + unicode(t) + ", " + unicode(v))
 	print(unicode(n) + ", " + unicode(up) + ", " + unicode(nup) + ", " + unicode(t) + ", " + to_expr_view(v).to_sexpr())
-
-"""
-foobar = "/Users/dehuang/Documents/research/proto/open-src/lean/library"
-
-env = lean.import_modules([os.path.join(foobar, "init", "data", "nat")], [lean.name("basic")], 100000)
-
-print("WTF??")
-print(env.get(lean.name("dfdf")))
-"""
