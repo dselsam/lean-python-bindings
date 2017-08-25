@@ -370,15 +370,40 @@ PYBIND11_PLUGIN(lean) {
     });
 
   // TODO(dhs): expose more methods
+  py::class_<lean::local_decl>(m, "local_decl")
+    .def(py::init<>())
+    .def("get_name", &lean::local_decl::get_name)
+    .def("get_pp_name", &lean::local_decl::get_pp_name)
+    .def("get_type", &lean::local_decl::get_type)
+    .def("get_value", &lean::local_decl::get_value)
+    .def("get_info", &lean::local_decl::get_info)
+    ;
+  
   py::class_<lean::local_context>(m, "local_context")
     .def(py::init<>())
+    .def("get_local_decl", [&](lean::local_context const & self, lean::expr const & e) {
+	return self.get_local_decl(e);
+      }) //, py::return_value_policy::reference_internal)
+    .def("get_local_decl", [&](lean::local_context const & self, lean::name const & n) {
+	return self.get_local_decl(n);
+      })//, py::return_value_policy::reference_internal)
+
+    .def("for_each", [&](lean::local_context const & self, py::function fn) {
+	self.for_each([&](lean::local_decl const & d) { fn(d); }); })
     ;
 
+  py::class_<lean::metavar_decl>(m, "metavar_decl")
+    .def(py::init<>())
+    .def("get_type", &lean::metavar_decl::get_type)//, py::return_value_policy::reference_internal)
+    .def("get_context", &lean::metavar_decl::get_context)//, py::return_value_policy::reference_internal)    
+    ;
+  
   // TODO(dhs): expose more methods  
   py::class_<lean::metavar_context>(m, "metavar_context")
     .def(py::init<>())
     .def("mk_metavar_decl", [&](lean::metavar_context & self, lean::local_context const & ctx, lean::expr const & type) {
 	return self.mk_metavar_decl(ctx, type); })
+    .def("get_metavar_decl", &lean::metavar_context::get_metavar_decl)//, py::return_value_policy::reference_internal)
     ;
 
   py::class_<lean::defeq_can_state>(m, "defeq_can_state")
@@ -395,7 +420,10 @@ PYBIND11_PLUGIN(lean) {
 	 lean::metavar_context const &, lean::list<lean::expr> const &, lean::expr const &,
 	 lean::defeq_can_state const &, lean::tactic_user_state const &>())
     .def(py::init<lean::tactic_state const &>())
-    .def("goals", &lean::tactic_state::goals, py::return_value_policy::reference_internal)
+    .def("main", &lean::tactic_state::main)
+    .def("goals", &lean::tactic_state::goals)    
+    .def("mctx", &lean::tactic_state::mctx)
+    .def("env", &lean::tactic_state::env)        
     ;
 
   py::class_<lean::vm_obj>(m, "vm_obj")
