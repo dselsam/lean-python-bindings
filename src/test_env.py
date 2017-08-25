@@ -23,11 +23,20 @@ env.for_each_declaration(add_to_list)
 
 print len(decls)
 
+# build theorem context
+ctx = {}
 for decl in decls:
-	print unicode(decl.get_name())
-	#print isinstance(unicode(decl.get_name()), unicode)
-	#print isinstance(decl.get_name(), unicode)
-	#print u' '.join([to_expr_view(decl.get_type()).to_sexpr()]).encode()
-	n, up, nup, t, v = DeclView(decl).destruct()
-	#print(unicode(n) + ", " + unicode(up) + ", " + unicode(nup) + ", " + unicode(t) + ", " + unicode(v))
-	print(unicode(n) + ", " + unicode(up) + ", " + unicode(nup) + ", " + unicode(t) + ", " + to_expr_view(v).to_sexpr())
+    if decl.is_theorem():
+        n, up, nup, t, v = DeclView(decl).destruct()
+        ctx[n] = v
+
+for decl in decls:
+    if decl.is_theorem():
+        n, up, nup, t, v = DeclView(decl).destruct()
+        print("A: " + unicode(n) + ", " + unicode(up) + ", " + unicode(nup) + ", " + unicode(t) + ", " + unicode(type(v)))
+        print("B: " + unicode(gather_theorem(ctx, v)))
+        #print("A: " + unicode(n) + ", " + unicode(up) + ", " + unicode(nup) + ", " + unicode(t))
+        #print("B: " + unicode(v))
+    #print gather_constant(env, v)
+
+    #print(unicode(n) + ", " + unicode(up) + ", " + unicode(nup) + ", " + unicode(t) + ", " + unicode(type(v)))

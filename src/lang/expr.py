@@ -158,7 +158,7 @@ class PiView(ExprView):
 
     def to_sexpr(self):
         n, t, e, bi, g = self.destruct()
-        return "Pi(" +  ", " + to_expr_view(t).to_sexpr() + ", " + to_expr_view(e).to_sexpr() + ", " + unicode(bi) + ", " + unicode(g) + ")"
+        return "Pi(" + unicode(n) + ", " + to_expr_view(t).to_sexpr() + ", " + to_expr_view(e).to_sexpr() + ", " + unicode(bi) + ", " + unicode(g) + ")"
 
 
 class LetView(ExprView):
@@ -186,8 +186,8 @@ class MacroView(ExprView):
     def destruct(self):
         # type: ? -> ? -> ? -> lean.expr
         acc = []
-        for arg in range(0, self.expr.macro_num_args()):
-            acc += self.expr.macro_arg()
+        for idx in range(0, self.expr.macro_num_args()):
+            acc += [self.expr.macro_arg(idx)]
         # TODO: expose macro_def??
         # return (self.expr.macro_def(), self.expr.macro_num_args(), acc)
         return (self.expr.macro_num_args(), acc)
@@ -195,7 +195,11 @@ class MacroView(ExprView):
     def to_sexpr(self):
         #e, nargs, args = self.destruct()
         nargs, args = self.destruct()
-        return "Macro(" + unicode(nargs) + ", " + unicode(args) + ")"
+        acc = ""
+        for arg in args:
+            acc += to_expr_view(arg).to_sexpr()
+        return "Macro(" + unicode(nargs) + ", " + acc + ")"
+        #return "Macro(" + unicode(nargs) + ", " + unicode(args) + ")"
 
 
 # -------------------------------------
@@ -225,3 +229,44 @@ def to_expr_view(expr):
         return MacroView(expr)
     else:
         raise NameError("Unexpected lean.expr kind: " + unicode(ek))
+
+
+# TODO: correct?
+def gather_theorem(ctx, expr):
+    acc = []
+
+    def go(expr):
+        ek = expr.kind()
+        if ek == lean.Var:
+            pass
+        elif ek == lean.Sort:
+            pass
+        elif ek == lean.Constant:
+            n, _ = ConstantView(expr).destruct()
+            if n in ctx:
+                acc.append(n)
+        elif ek == lean.Meta:
+            pass
+        elif ek == lean.Local:
+            pass
+        elif ek == lean.App:
+            e1, e2 = AppView(expr).destruct()
+            go(e1)
+            go(e2)
+        elif ek == lean.Lambda:
+            x, t, e, _, _ = LambdaView(expr).destruct()
+            go(e)
+        elif ek == lean.Pi:
+            x, t, e, _, _ = PiView(expr).destruct()
+            go(e)
+        elif ek == lean.Let:
+            x, t, v, e = LetView(expr).destruct()
+            go(e)
+        elif ek == lean.Macro:
+            pass
+        else:
+            raise NameError("Unexpected lean.expr kind: " + unicode(ek))
+
+    go(expr)
+    return acc
+
