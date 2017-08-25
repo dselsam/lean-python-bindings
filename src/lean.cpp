@@ -456,7 +456,11 @@ PYBIND11_PLUGIN(lean) {
 	  new_env = lean::vm_compile(new_env, new_env.get(fn_name));
 
 	  lean::vm_state vms(new_env, ts.get_options());
-	  
+
+	  // When this was a lean::buffer<lean::vm_obj> args, the vm_state destructor would try to
+	  // destruct an already destructed object.
+	  // This happened even when args was never called downstream.
+	  // There may still be an issue with the connection between the vm, the vm_state, and Python.
 	  std::vector<lean::vm_obj> args;
 	  args.push_back(lean::to_obj(ts));
 
