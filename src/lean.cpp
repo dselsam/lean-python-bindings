@@ -264,7 +264,7 @@ PYBIND11_PLUGIN(lean) {
     ;
   
   m.def("mk_var", &lean::mk_var, py::arg("idx"), py::arg("g") = lean::nulltag);
-  m.def("mk_constant", [&](lean::name const & n, lean::levels const & ls = lean::list<lean::level>(), lean::tag g) {
+  m.def("mk_constant", [&](lean::name const & n, lean::levels const & ls = lean::list<lean::level>(), lean::tag g = lean::nulltag) {
       return lean::mk_constant(n, ls, g); },
     py::arg("n"), py::arg("ls") = lean::list<lean::level>(), py::arg("g") = lean::nulltag);
 

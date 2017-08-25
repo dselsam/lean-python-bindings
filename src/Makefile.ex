@@ -11,7 +11,7 @@ PYTHON_INCLUDE = /usr/include/python$(PYTHON_VERSION)
 
 
 # location of Pybind11 includes
-PYBIND11_INC = <path/to/pybind11/include>
+PYBIND11_INC = <path/to/pybind11/include> 
 
 
 # location of LEAN

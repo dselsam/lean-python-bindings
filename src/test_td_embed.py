@@ -1,6 +1,6 @@
-import tensorflow as tf
-import tensorflow_fold as td
-import random
+#import tensorflow as tf
+#import tensorflow_fold as td
+#import random
 
 from lang.expr import *
 from lang.name import *

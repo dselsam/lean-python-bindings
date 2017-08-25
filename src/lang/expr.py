@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import lean
 
 import lang.level as level
@@ -48,7 +50,7 @@ class VarView(ExprView):
 
     def to_sexpr(self):
         x = self.destruct()
-        return "Var(" + str(x) + ")"
+        return "Var(" + unicode(x) + ")"
 
 
 class SortView(ExprView):
@@ -62,7 +64,7 @@ class SortView(ExprView):
 
     def to_sexpr(self):
         lvl = self.destruct()
-        return "Sort(" + str(lvl) + ")"
+        return "Sort(" + unicode(lvl) + ")"
 
 
 class ConstantView(ExprView):
@@ -76,7 +78,7 @@ class ConstantView(ExprView):
 
     def to_sexpr(self):
         c, lvl = self.destruct()
-        return "Constant(" + str(c) + ", " + str(lvl) + ")"
+        return "Constant(" + unicode(c) + ", " + unicode(lvl) + ")"
 
 
 class MetaView(ExprView):
@@ -92,7 +94,7 @@ class MetaView(ExprView):
 
     def to_sexpr(self):
         x, t, ppx = self.destruct()
-        return "Metavar(" + str(x) + ", " + to_expr_view(t).to_sexpr() + ", " + str(ppx) + ")"
+        return "Metavar(" + unicode(x) + ", " + to_expr_view(t).to_sexpr() + ", " + unicode(ppx) + ")"
 
 
 class LocalView(ExprView):
@@ -106,7 +108,7 @@ class LocalView(ExprView):
 
     def to_sexpr(self):
         li = self.destruct()
-        return "Local(" + str(li) + ")"
+        return "Local(" + unicode(li) + ")"
 
 
 class AppView(ExprView):
@@ -138,7 +140,7 @@ class LambdaView(ExprView):
 
     def to_sexpr(self):
         n, t, e, bi, g = self.destruct()
-        return "Lambda(" + str(n) + ", " + to_expr_view(t).to_sexpr() + ", " + to_expr_view(e).to_sexpr() + ", " + str(bi) + ", " + str(g) + ")"
+        return "Lambda(" + unicode(n) + ", " + to_expr_view(t).to_sexpr() + ", " + to_expr_view(e).to_sexpr() + ", " + unicode(bi) + ", " + unicode(g) + ")"
 
 
 class PiView(ExprView):
@@ -156,7 +158,7 @@ class PiView(ExprView):
 
     def to_sexpr(self):
         n, t, e, bi, g = self.destruct()
-        return "Pi(" + str(n) + ", " + to_expr_view(t).to_sexpr() + ", " + to_expr_view(e).to_sexpr() + ", " + str(bi) + ", " + str(g) + ")"
+        return "Pi(" +  ", " + to_expr_view(t).to_sexpr() + ", " + to_expr_view(e).to_sexpr() + ", " + unicode(bi) + ", " + unicode(g) + ")"
 
 
 class LetView(ExprView):
@@ -173,23 +175,27 @@ class LetView(ExprView):
 
     def to_sexpr(self):
         x, t, v, e = self.destruct()
-        return "Let(" + str(x) + ", " + to_expr_view(t).to_sexpr() + ", " + to_expr_view(v).to_sexpr() + ", " + to_expr_view(e).to_sexpr() + ")"
+        return "Let(" + unicode(x) + ", " + to_expr_view(t).to_sexpr() + ", " + to_expr_view(v).to_sexpr() + ", " + to_expr_view(e).to_sexpr() + ")"
 
 
 class MacroView(ExprView):
     def __init__(self, expr):
         assert expr.kind() == lean.Macro
-        super(PiView, self).__init__(expr)
+        super(MacroView, self).__init__(expr)
 
     def destruct(self):
         # type: ? -> ? -> ? -> lean.expr
-        return (self.macro_def(),
-                self.macro_num_args(),
-                self.macro_arg())
+        acc = []
+        for arg in range(0, self.expr.macro_num_args()):
+            acc += self.expr.macro_arg()
+        # TODO: expose macro_def??
+        # return (self.expr.macro_def(), self.expr.macro_num_args(), acc)
+        return (self.expr.macro_num_args(), acc)
 
     def to_sexpr(self):
-        e, nargs, args = self.destruct()
-        return "Macro(" + to_expr_view(e).to_sexpr() + ", " + str(nargs) + ", " + str(args) + ")"
+        #e, nargs, args = self.destruct()
+        nargs, args = self.destruct()
+        return "Macro(" + unicode(nargs) + ", " + unicode(args) + ")"
 
 
 # -------------------------------------
@@ -218,4 +224,4 @@ def to_expr_view(expr):
     elif ek == lean.Macro:
         return MacroView(expr)
     else:
-        raise NameError("Unexpected lean.expr kind: " + str(ek))
+        raise NameError("Unexpected lean.expr kind: " + unicode(ek))
