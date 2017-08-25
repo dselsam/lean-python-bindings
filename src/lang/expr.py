@@ -206,6 +206,7 @@ class MacroView(ExprView):
 # Utility
 
 def to_expr_view(expr):
+    # type: lean.expr -> ExprView
     ek = expr.kind()
     if ek == lean.Var:
         return VarView(expr)
@@ -233,6 +234,7 @@ def to_expr_view(expr):
 
 # TODO: correct?
 def gather_theorem(ctx, expr):
+    # type: dict<lean.name -> lean.expr> -> [lean.name]
     acc = []
 
     def go(expr):
