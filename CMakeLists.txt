@@ -9,7 +9,7 @@ find_package(PythonLibsNew REQUIRED)
 include_directories(/usr/local/include/lean_ext/)
 
 add_subdirectory(pybind11)
-pybind11_add_module(lean src/lean.cpp)
+pybind11_add_module(lean lean/lean.cpp)
 
 # TODO(pcm): Make a pkg-config script for Lean and replace the path.
 if (APPLE)
