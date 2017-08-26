@@ -21,15 +21,20 @@ and that cmake and a C++ compiler is installed.
 
 FIXME: We also assume that the Lean Theorem Prover is installed to /usr/local/<...>. 
 
+1. Activate a virtualenv (optional).
 
-To install the package system wide, run
+2. Install the requirements.
+```
+pip install -r requirements.txt
+```
 
+3. Install the package.
+
+Install system wide:
 ```
 python setup.py install
 ```
-
-and to do development in the directory run
-
+Install for development:
 ```
 python setup.py develop
 ```
