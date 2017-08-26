@@ -17,7 +17,10 @@ We assume the repo has been cloned with
 git clone --recursive https://github.com/dselsam/lean-python-bindings
 ```
 
-and that cmake and a C++ compiler is installed.
+and that cmake and a C++ compiler is installed. 
+
+FIXME: We also assume that the Lean Theorem Prover is installed to /usr/local/<...>. 
+
 
 To install the package system wide, run
 
