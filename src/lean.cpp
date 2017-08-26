@@ -230,7 +230,7 @@ PYBIND11_PLUGIN(lean) {
     .def("var_idx", [&](lean::expr const & self) { return lean::var_idx(self); })
     .def("const_name", [&](lean::expr const & self) { return lean::const_name(self); })
     .def("const_levels", [&](lean::expr const & self) { return lean::const_levels(self); })
-    .def("macro_def", [&](lean::expr const & self) { return lean::macro_def(self); })
+    .def("macro_def_name", [&](lean::expr const & self) { return lean::macro_def(self).get_name(); })
     .def("macro_num_args", [&](lean::expr const & self) { return lean::macro_num_args(self); })
     .def("macro_arg", [&](lean::expr const & self, unsigned i) { return lean::macro_arg(self, i); })
     .def("app_fn", [&](lean::expr const & self) { return lean::app_fn(self); })
