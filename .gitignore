@@ -1,4 +1,5 @@
 src/Makefile
+config.sh
 *.pyc
 *.~
 *.o
