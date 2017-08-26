@@ -32,6 +32,7 @@ class BinaryDistribution(Distribution):
 setup(name="lean",
       version="0.0.1",
       packages=find_packages(),
+      install_requires=["numpy", "scipy", "tensorflow"],
       cmdclass={"build_ext": build_ext},
       # The BinaryDistribution argument triggers build_ext
       distclass=BinaryDistribution,
