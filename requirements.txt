@@ -1,0 +1,10 @@
+# No version
+numpy
+scipy
+jupyter
+
+# Specific version
+tensorflow==1.0.0
+
+# URL
+# https://storage.googleapis.com/tensorflow_fold/tensorflow_fold-0.0.1-py3-none-linux_x86_64.whl
