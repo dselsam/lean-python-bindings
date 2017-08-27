@@ -1,20 +1,19 @@
-import gc
+from nose.tools import assert_equals, assert_not_equals, assert_false, assert_true
 import lean
 import os
 
 def print_local_decl(d):
-    print "\n", d.get_pp_name(), " : ", d.get_type(),
+    print("\n", d.get_pp_name(), " : ", d.get_type())
 
 def print_main_goal(tstate):
     goal_expr = tstate.goals().head()
     goal_decl = tstate.mctx().get_metavar_decl(goal_expr)
     lctx_for_goal_decl = goal_decl.get_context()
-    print "\nGoal:",
+    print("\nGoal:",)
     lctx_for_goal_decl.for_each(print_local_decl)
-    print "\n-----------------------"
-    print goal_decl.get_type(), "\n"
+    print("\n-----------------------")
+    print(goal_decl.get_type(), "\n")
 
-    
 def create_tactic_state(env, goal_type):
   options = lean.options()
   decl_name = lean.name("my_theorem")
@@ -61,7 +60,5 @@ tac_infer_type = lean.mk_constant(lean.name(lean.name("tactic"), "infer_type"))
 (result, tstate3) = run_tactic(tstate2, tac_infer_type, [lean.to_obj(new_goal)])
 
 ty = lean.to_expr(result)
-
-print "should be 'false':"
-print ty
+assert_equals(str(ty), "false")
 

@@ -30,11 +30,16 @@ pip install -r requirements.txt
 
 3. Install the package.
 
-Install system wide:
+install system wide:
 ```
 python setup.py install
 ```
-Install for development:
+install for development:
 ```
 python setup.py develop
+```
+
+4. Run the tests.
+```
+nosetests test
 ```

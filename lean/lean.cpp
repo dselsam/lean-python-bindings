@@ -83,6 +83,8 @@ PYBIND11_PLUGIN(lean) {
     .def("get_prefix", &lean::name::get_prefix)
 
     .def("__str__", [&](lean::name const & self) { return self.to_string(); })
+    .def("__eq__", [&](lean::name const & self, lean::name const & other) { return self == other; })
+    .def("__ne__", [&](lean::name const & self, lean::name const & other) { return self != other; })
     .def("__cmp__", [&](lean::name const & self, lean::name const & other) { return cmp(self, other); })
     .def("__hash__", &lean::name::hash)                    
   ;

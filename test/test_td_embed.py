@@ -6,7 +6,6 @@ from lang.expr import *
 from lang.name import *
 from lang.level import *
 
-
 # Expressions
 v1 = lean.mk_var(1)
 v2 = lean.mk_var(2)
@@ -19,7 +18,6 @@ mv1 = lean.mk_metavar(lean.name("abc"), c_foo)
 lam = lean.mk_lambda(lean.name("x"), v1, lean.mk_app(c_bar, lean.mk_var(0)))
 pi1 = lean.mk_pi(lean.name("x"), v1, lean.mk_app(c_bar, lean.mk_var(0)))
 let1 = lean.mk_let(lean.name("x"), c_foo, v1, lean.mk_app(c_bar, lean.mk_var(0)))
-
 
 print(to_expr_view(v1).to_sexpr())
 print(to_expr_view(v2).to_sexpr())
