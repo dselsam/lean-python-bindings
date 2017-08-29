@@ -26,6 +26,23 @@ assert_equals(c_foo.const_name(), lean.name("foo"))
 
 assert_equals(str(c_bar.const_levels(), ), "(1 0)")
 
+# Python lists to lean lists
+
+levels = lean.list_level([lean.mk_level_one(), lean.mk_level_zero()])
+assert_equals(str(levels), "(1 0)")
+
+names = lean.list_name([lean.name("hello"), lean.name("world")])
+assert_equals(str(names), "(hello world)")
+
+expressions = lean.list_expr([lean.mk_constant(lean.name("true")), lean.mk_constant(lean.name("false"))])
+assert_equals(str(expressions), "(true false)")
+
+# Lean lists to Python lists
+
+assert_equals(str(lean.list_level(list(levels))), "(1 0)")
+assert_equals(str(lean.list_name(list(names))), "(hello world)")
+assert_equals(str(lean.list_expr(list(expressions))), "(true false)")
+
 lam = lean.mk_lambda(lean.name("x"), v1, lean.mk_app(c_bar, lean.mk_var(0)))
 assert_equals(str(lam), "fun (x : #1), (bar.{1 0} x)")
 
