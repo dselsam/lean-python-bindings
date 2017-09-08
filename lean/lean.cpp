@@ -4,6 +4,7 @@
 #include <pybind11/functional.h>
 
 #include <sstream>
+#include <fstream>
 
 #include "init/init.h"
 #include "util/name.h"
@@ -11,6 +12,7 @@
 #include "util/optional.h"
 #include "util/path.h"
 #include "util/lean_path.h"
+#include "util/serializer.h"
 #include "kernel/level.h"
 #include "kernel/expr.h"
 #include "kernel/declaration.h"
@@ -21,6 +23,7 @@
 #include "library/util.h"
 #include "library/eval_helper.h"
 #include "library/metavar_context.h"
+#include "library/kernel_serializer.h"
 #include "library/defeq_canonizer.h"
 #include "library/tactic/tactic_state.h"
 #include "library/compiler/vm_compiler.h"
@@ -37,6 +40,26 @@ void from_python_list(lean::list<LeanT>& instance, const py::list& l) {
   }
   new (&instance) lean::list<LeanT>(lean::to_list(result.begin(), result.end()));
 }
+
+class lean_reader {
+  std::ifstream in;
+  lean::deserializer d;
+public:
+  lean_reader(std::string const & filename):
+    in(filename, std::ios::binary), d(in) {}
+
+  bool read_bool() {
+    bool b; d >> b; return b;
+  }
+
+  lean::expr read_expr() {
+    lean::expr e; d >> e; return e;
+  }
+
+  bool eof() {
+    return in.eof();
+  }
+};
 
 PYBIND11_PLUGIN(lean) {
   py::module m("lean", "pybind11 lean plugin");
@@ -464,6 +487,13 @@ PYBIND11_PLUGIN(lean) {
   m.def("to_star", [&](lean::vm_obj const & s) { return py::tuple(); });
   m.def("to_expr", [&](lean::vm_obj const & e) { return lean::to_expr(e); });
   m.def("to_obj", [&](lean::expr const & e) { return lean::to_obj(e); });
+
+  py::class_<lean_reader>(m, "reader")
+    .def(py::init<std::string const &>())
+    .def("read_bool", &lean_reader::read_bool)
+    .def("read_expr", &lean_reader::read_expr)
+    .def("eof", &lean_reader::eof)
+    ;
 
   m.def("run_tactic", [&](lean::tactic_state const & ts, lean::expr const & tactic,
 			  lean::level_param_names const & ls, std::vector<lean::vm_obj> const & _args) {
