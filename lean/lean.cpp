@@ -323,6 +323,16 @@ PYBIND11_PLUGIN(lean) {
   m.def("mk_Type", &lean::mk_Type);
   m.def("mk_arrow", &lean::mk_arrow, py::arg("t"), py::arg("e"), py::arg("g") = lean::nulltag);
 
+  py::class_<lean::optional<lean::expr> >(m, "optional_expr")
+    .def(py::init<>())
+    .def(py::init<lean::expr>())
+    .def("is_some", [&](lean::optional<lean::expr> const & self) { return static_cast<bool>(self); })
+    .def("value", [&](lean::optional<lean::expr> const & self) { return self.value(); })
+
+    .def("__eq__", [&](lean::optional<lean::expr> const & self, lean::optional<lean::expr> const & other) { return self == other; })
+    .def("__ne__", [&](lean::optional<lean::expr> const & self, lean::optional<lean::expr> const & other) { return self != other; })
+  ;
+
   py::class_<lean::list<lean::expr> >(m, "list_expr")
     .def(py::init<>())
     .def(py::init<lean::expr const &, lean::list<lean::expr> const &>())
@@ -353,6 +363,13 @@ PYBIND11_PLUGIN(lean) {
     .def("get_value", &lean::declaration::get_value)
     ;
 
+  py::class_<lean::optional<lean::declaration> >(m, "optional_declaration")
+    .def(py::init<>())
+    .def(py::init<lean::declaration>())
+    .def("is_some", [&](lean::optional<lean::declaration> const & self) { return static_cast<bool>(self); })
+    .def("value", [&](lean::optional<lean::declaration> const & self) { return self.value(); })
+  ;
+
   m.def("mk_definition", [&](lean::environment const & env, lean::name const & n,
 			     lean::level_param_names const & params, lean::expr const & t, lean::expr const & v, bool trusted) {
 	  return lean::mk_definition(env, n, params, t, v, true, trusted); });
@@ -377,6 +394,12 @@ PYBIND11_PLUGIN(lean) {
     .def("find", &lean::environment::find)
     .def("get", &lean::environment::get)
 
+    .def("try_add", [&](lean::environment const & self, lean::declaration const & decl) {
+      lean::certified_declaration cd = lean::check(self, decl, true);
+      lean::environment new_env = self.add(cd);
+      return new_env;
+    })
+
     .def("for_each_declaration", [&](lean::environment const & self, py::function fn) {
 	self.for_each_declaration([&](lean::declaration const & d) { fn(d); }); })
   ;
@@ -391,6 +414,14 @@ PYBIND11_PLUGIN(lean) {
       }
       return lean::import_modules(env, "", imports, lean::mk_olean_loader(search_path));
     });
+
+  // TODO: expose more methods
+  py::class_<lean::type_checker>(m, "type_checker")
+    .def(py::init<lean::environment const &, bool, bool>())
+    .def("check", [&](lean::type_checker & self, lean::expr const & t) {
+      return self.check(t);
+    })
+  ;
 
   // TODO(dhs): expose more methods
   py::class_<lean::local_decl>(m, "local_decl")
